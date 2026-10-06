@@ -1,0 +1,165 @@
+name: Charts reviewed-head x64 control
+on:
+  push:
+    branches: [codex/charts-2903-control-oct6]
+permissions:
+  contents: read
+jobs:
+  core:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - mode: reviewed
+            sha: eb36aa2777d89125f147e93cf98a98c998f1c785
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.0'
+      - name: Verify full tested SHA
+        run: |
+          test "$(git rev-parse HEAD)" = '${{ matrix.sha }}'
+          git show -s --format='%H %P'
+          node -v
+          uname -m
+      - name: Install locked dependencies
+        id: install
+        run: |
+          corepack yarn install --frozen-lockfile --ignore-scripts
+          corepack yarn --cwd e2e install --frozen-lockfile
+          corepack yarn --cwd docs install --frozen-lockfile
+          corepack yarn --cwd .buildkite install --frozen-lockfile
+      - name: Unit tests
+        if: always() && steps.install.outcome == 'success'
+        run: corepack yarn test --runInBand
+      - name: Timezone tests
+        if: always() && steps.install.outcome == 'success'
+        run: corepack yarn test:tz --ci --runInBand
+      - name: Package build
+        if: always() && steps.install.outcome == 'success'
+        run: corepack yarn workspace @elastic/charts build
+      - name: All type checks
+        if: always() && steps.install.outcome == 'success'
+        run: corepack yarn typecheck:all
+      - name: PR changed-file lint
+        if: always() && steps.install.outcome == 'success'
+        run: corepack yarn lint:it packages/charts/src/chart_types/xy_chart/annotations/line/tooltip.test.tsx packages/charts/src/chart_types/xy_chart/renderer/dom/annotations/annotations.tsx packages/charts/src/chart_types/xy_chart/renderer/dom/annotations/line_marker.tsx packages/charts/src/state/actions/dom_element.ts
+      - name: Repository formatting
+        if: always() && steps.install.outcome == 'success'
+        run: corepack yarn prettier:check
+      - name: API signature check
+        if: always() && steps.install.outcome == 'success'
+        run: corepack yarn api:check
+      - name: Docs build equivalent without deployment credentials
+        if: always() && steps.install.outcome == 'success'
+        env:
+          DOCUSAURUS_URL: https://example.invalid
+          NODE_ENV: development
+          NODE_OPTIONS: --openssl-legacy-provider
+        run: |
+          corepack yarn typedoc
+          corepack yarn --cwd docs build
+      - name: Storybook build
+        if: always() && steps.install.outcome == 'success'
+        env:
+          NODE_ENV: development
+          NODE_OPTIONS: --openssl-legacy-provider
+        run: corepack yarn storybook:build
+      - name: E2E server build
+        if: always() && steps.install.outcome == 'success'
+        env:
+          NODE_ENV: production
+          NODE_OPTIONS: --openssl-legacy-provider
+        run: |
+          corepack yarn test:e2e:generate
+          corepack yarn test:e2e:server:build
+          tar -czf "$RUNNER_TEMP/e2e-server.tgz" -C e2e_server/.out .
+      - name: Save browser server
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-${{ matrix.mode }}
+          path: ${{ runner.temp }}/e2e-server.tgz
+          if-no-files-found: error
+  browser:
+    needs: core
+    if: always() && !cancelled()
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - mode: reviewed
+            sha: eb36aa2777d89125f147e93cf98a98c998f1c785
+            runner: ubuntu-24.04
+            shard: 1
+          - mode: reviewed
+            sha: eb36aa2777d89125f147e93cf98a98c998f1c785
+            runner: ubuntu-24.04
+            shard: 2
+          - mode: reviewed
+            sha: eb36aa2777d89125f147e93cf98a98c998f1c785
+            runner: ubuntu-24.04
+            shard: 3
+          - mode: reviewed
+            sha: eb36aa2777d89125f147e93cf98a98c998f1c785
+            runner: ubuntu-24.04
+            shard: 4
+          - mode: reviewed
+            sha: eb36aa2777d89125f147e93cf98a98c998f1c785
+            runner: ubuntu-24.04
+            shard: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.0'
+      - name: Verify tested SHA and architecture
+        run: |
+          test "$(git rev-parse HEAD)" = '${{ matrix.sha }}'
+          git show -s --format='%H %P'
+          node -v
+          uname -m
+      - name: Install browser test dependencies
+        run: corepack yarn --cwd e2e install --frozen-lockfile
+      - name: Install locked Chromium and Noble system dependencies
+        run: corepack yarn --cwd e2e playwright install --with-deps chromium
+      - uses: actions/download-artifact@v4
+        with:
+          name: server-${{ matrix.mode }}
+          path: ${{ runner.temp }}/server
+      - name: Restore server and example manifest
+        run: |
+          mkdir -p e2e/server
+          tar -xzf "$RUNNER_TEMP/server/e2e-server.tgz" -C e2e/server
+          node ./e2e/scripts/extract_examples.js
+      - name: Chrome visual regression
+        env:
+          CI: 'true'
+          ENV_URL: http://127.0.0.1:9002
+        run: corepack yarn --cwd e2e playwright test --project=chrome --shard=${{ matrix.shard }}/5
+      - name: Chrome accessibility
+        if: always() && matrix.shard == 1
+        env:
+          CI: 'true'
+          ENV_URL: http://127.0.0.1:9002
+        run: corepack yarn --cwd e2e playwright test --config=playwright.a11y.config.ts --project=chrome
+      - name: Save browser reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-${{ matrix.mode }}-${{ matrix.shard }}
+          path: |
+            e2e/reports/
+            e2e/test_failures/
+          if-no-files-found: warn
