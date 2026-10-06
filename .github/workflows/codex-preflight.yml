@@ -160,7 +160,6 @@ jobs:
             sha: cf7010a8749d902c82b72cf152fb8bf805aee262
             runner: ubuntu-24.04-arm
             shard: 5
-    container: mcr.microsoft.com/playwright:v1.62.1-noble
     steps:
       - uses: actions/checkout@v4
         with:
@@ -177,6 +176,8 @@ jobs:
           uname -m
       - name: Install browser test dependencies
         run: corepack yarn --cwd e2e install --frozen-lockfile
+      - name: Install locked Chromium and Noble system dependencies
+        run: corepack yarn --cwd e2e playwright install --with-deps chromium
       - uses: actions/download-artifact@v4
         with:
           name: server-${{ matrix.mode }}
