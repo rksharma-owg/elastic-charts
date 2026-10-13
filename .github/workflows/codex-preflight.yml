@@ -12,12 +12,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - mode: patch
-            sha: d9a610ac6275a5ee6f43026b38af395428dc6c00
           - mode: merge
-            sha: 70b5d4c4552151833c227337342b97268277b0ea
+            sha: bfc47f065bcd6479a5252f346fa0af9861c95c1a
           - mode: baseline
-            sha: cf7010a8749d902c82b72cf152fb8bf805aee262
+            sha: c3e992ca042d54427d358ae3138f651e8ac24214
     steps:
       - uses: actions/checkout@v4
         with:
@@ -100,64 +98,44 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - mode: patch
-            sha: d9a610ac6275a5ee6f43026b38af395428dc6c00
-            runner: ubuntu-24.04
-            shard: 1
-          - mode: patch
-            sha: d9a610ac6275a5ee6f43026b38af395428dc6c00
-            runner: ubuntu-24.04
-            shard: 2
-          - mode: patch
-            sha: d9a610ac6275a5ee6f43026b38af395428dc6c00
-            runner: ubuntu-24.04
-            shard: 3
-          - mode: patch
-            sha: d9a610ac6275a5ee6f43026b38af395428dc6c00
-            runner: ubuntu-24.04
-            shard: 4
-          - mode: patch
-            sha: d9a610ac6275a5ee6f43026b38af395428dc6c00
-            runner: ubuntu-24.04
-            shard: 5
           - mode: merge
-            sha: 70b5d4c4552151833c227337342b97268277b0ea
+            sha: bfc47f065bcd6479a5252f346fa0af9861c95c1a
             runner: ubuntu-24.04-arm
             shard: 1
           - mode: merge
-            sha: 70b5d4c4552151833c227337342b97268277b0ea
+            sha: bfc47f065bcd6479a5252f346fa0af9861c95c1a
             runner: ubuntu-24.04-arm
             shard: 2
           - mode: merge
-            sha: 70b5d4c4552151833c227337342b97268277b0ea
+            sha: bfc47f065bcd6479a5252f346fa0af9861c95c1a
             runner: ubuntu-24.04-arm
             shard: 3
           - mode: merge
-            sha: 70b5d4c4552151833c227337342b97268277b0ea
+            sha: bfc47f065bcd6479a5252f346fa0af9861c95c1a
             runner: ubuntu-24.04-arm
             shard: 4
           - mode: merge
-            sha: 70b5d4c4552151833c227337342b97268277b0ea
+            sha: bfc47f065bcd6479a5252f346fa0af9861c95c1a
             runner: ubuntu-24.04-arm
             shard: 5
           - mode: baseline
-            sha: cf7010a8749d902c82b72cf152fb8bf805aee262
+            sha: c3e992ca042d54427d358ae3138f651e8ac24214
             runner: ubuntu-24.04-arm
             shard: 1
           - mode: baseline
-            sha: cf7010a8749d902c82b72cf152fb8bf805aee262
+            sha: c3e992ca042d54427d358ae3138f651e8ac24214
             runner: ubuntu-24.04-arm
             shard: 2
           - mode: baseline
-            sha: cf7010a8749d902c82b72cf152fb8bf805aee262
+            sha: c3e992ca042d54427d358ae3138f651e8ac24214
             runner: ubuntu-24.04-arm
             shard: 3
           - mode: baseline
-            sha: cf7010a8749d902c82b72cf152fb8bf805aee262
+            sha: c3e992ca042d54427d358ae3138f651e8ac24214
             runner: ubuntu-24.04-arm
             shard: 4
           - mode: baseline
-            sha: cf7010a8749d902c82b72cf152fb8bf805aee262
+            sha: c3e992ca042d54427d358ae3138f651e8ac24214
             runner: ubuntu-24.04-arm
             shard: 5
     steps:
